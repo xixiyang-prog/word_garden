@@ -69,7 +69,7 @@
         words.push(word);
       }
       const history = Array.isArray(data.history) ? data.history.filter(h => h && ['choice','type'].includes(h.mode) && Number.isFinite(h.date) && Number.isSafeInteger(h.total) && h.total > 0 && Number.isSafeInteger(h.correct) && h.correct >= 0 && h.correct <= h.total).slice(0,50) : [];
-      return {version:1, words, history};
+      return {version:1, words, history, review:window.ReviewBank.normalize(data.review)};
     } catch (e) {
       initialWarning = '本地记录暂时无法读取。请先导出当前内容备份；本次使用临时题库，不会自动覆盖旧记录。';
       return {version:1, words:demo.map(d => makeWord(...d, true)), history:[]};
@@ -107,7 +107,7 @@
       ids.add(word.id);words.push(word);
     }
     const history=Array.isArray(data.history)?data.history.filter(h=>h&&['choice','type'].includes(h.mode)&&Number.isFinite(h.date)&&Number.isSafeInteger(h.total)&&h.total>0&&Number.isSafeInteger(h.correct)&&h.correct>=0&&h.correct<=h.total).slice(0,50):[];
-    return {version:1,words,history};
+    return {version:1,words,history,review:window.ReviewBank.normalize(data.review)};
   }
   const mastered = (word) => word.streak >= 3;
   const plant = (word) => mastered(word) ? '🌼' : word.streak >= 1 ? '🌿' : '🌱';
@@ -142,10 +142,10 @@
     $('#words-empty p').textContent = state.words.length ? '试试其他搜索词，或切换上方的筛选。' : '添加一组正确写法和常见错写，就能开始游戏。';
   }
   function route() {
-    const name = ['home','words','growth'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
+    const name = ['home','words','growth','study'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
     $$('.view').forEach(el => { el.hidden = el.id !== 'view-'+name; });
     $$('.nav-link').forEach(el => { const active = el.dataset.view === name; el.classList.toggle('active',active); if (active) el.setAttribute('aria-current','page'); else el.removeAttribute('aria-current'); });
-    $('#page-label').textContent = {home:'复习乐园',words:'我的错字本',growth:'成长记录'}[name];
+    $('#page-label').textContent = {home:'复习乐园',words:'我的错字本',growth:'成长记录',study:'四上知识岛'}[name];
   }
   function openEditor(id = null) {
     if(disk.needsReconnect()){disk.show();return;}
@@ -224,7 +224,7 @@
     const data = {...state,exportedAt:new Date().toISOString()};
     const url = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'}));
     const link=document.createElement('a'); link.href=url; link.download='字有进步-题库备份-'+new Date().toLocaleDateString('sv-SE')+'.json'; document.body.append(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
-    toast('已导出题库和每个词语的练习进度。');
+    toast('已导出错字题库、三科复习进度和学习记录。');
   }
   $('#import-file').addEventListener('change', async event => {
     const file=event.target.files[0];
@@ -374,16 +374,38 @@
     snapshot:()=>JSON.stringify({...state,exportedAt:new Date().toISOString()}),
     busy:()=>committing,
     persisted:()=>{initialWarning='';},
-    hasUnsaved:()=>disk.status().dirty||$('#editor-dialog').open||$('#bulk-dialog').open||!!quiz,
+    hasUnsaved:()=>disk.status().dirty||$('#editor-dialog').open||$('#bulk-dialog').open||!!quiz||!!window.KnowledgeReview?.active(),
     validate:validateDataset,
     apply(next){
       state=next;initialWarning='';quiz=null;editID=null;filter='all';
       for(const id of ['editor-dialog','bulk-dialog','quiz-dialog'])if($('#'+id).open)$('#'+id).close();
       $('#word-search').value='';
       $$('[data-filter]').forEach(el=>el.classList.toggle('active',el.dataset.filter==='all'));
-      render();
+      window.KnowledgeReview?.reset();render();
     }
   });
+  window.WordGardenStudy={
+    read:()=>window.ReviewBank.normalize(state.review),
+    blocked:()=>committing||disk.isBusy()||disk.needsReconnect(),
+    async commit(review){
+      if(committing||disk.isBusy()||disk.needsReconnect()){toast('请先完成保存或重新打开本地题库。');return false;}
+      committing=true;
+      // Keep failed answer saves in memory so the existing local-file retry can recover them.
+      try {state.review=window.ReviewBank.normalize(review);return await save();}
+      finally {committing=false;}
+    },
+    backup:exportWords, validate:validateDataset,
+    async restore(data){
+      if(this.blocked())return false;
+      const next=await validateDataset(data);
+      if(this.blocked())return false;
+      committing=true;
+      const previous=state;
+      try {state=next;if(!await save()){state=previous;return false;}window.KnowledgeReview?.reset();render();return true;}
+      finally {committing=false;}
+    },
+    toast, route
+  };
   $('#today-date').textContent=new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});
   render();route();
   if(initialWarning){toast(initialWarning);disk.markUnsaved(initialWarning);}else if(!disk.needsReconnect())void save();

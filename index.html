@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#365e48"><title>字有进步 · 错字小花园</title><link rel="stylesheet" href="styles.css"><script src="images.js" defer></script><script src="storage.js" defer></script><script src="app.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#365e48"><title>字有进步 · 错字小花园</title><link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="review.css"><script src="images.js" defer></script><script src="storage.js" defer></script><script src="review-bank.js" defer></script><script src="app.js" defer></script></head>
 <body>
 <svg class="svg-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
 <symbol id="leaf" viewBox="0 0 24 24"><path d="M20 4C9 2 3 7 5 14c2 7 14 6 15-10ZM4 21 15 10M10 15v-5m0 5h5"/></symbol>
@@ -37,5 +37,6 @@
 <dialog id="bulk-dialog" class="form-dialog"><div class="dialog-top"><span class="eyebrow">A HANDFUL OF NEW SEEDS</span><button class="icon-button" data-close="bulk-dialog" aria-label="关闭">×</button></div><h2>批量录入</h2><p class="dialog-description">每行一组，用竖线 | 分隔。提示可以不填。</p><label for="bulk-text">正确写法 | 常见错写 | 记忆提示</label><textarea id="bulk-text" rows="8" placeholder="再接再厉 | 再接再励 | 继续努力，用“厉”&#10;迫不及待 | 迫不急待 | 来不及等待，用“及”"></textarea><p id="bulk-error" class="form-error" role="alert"></p><div class="dialog-actions"><button class="button secondary" data-close="bulk-dialog">取消</button><button class="button primary" id="bulk-save">加入错字本</button></div></dialog>
 <dialog id="quiz-dialog" class="quiz-dialog"><div class="quiz-top"><span id="quiz-mode">火眼金睛</span><span id="quiz-number"></span><button class="icon-button" id="quit-quiz" aria-label="结束本轮">×</button></div><div class="quiz-progress"><div id="quiz-progress-bar"></div></div><div id="quiz-body"><div class="quiz-context" id="quiz-context"></div><h2 id="quiz-question"></h2><p id="quiz-instruction"></p><div id="quiz-options" class="quiz-options"></div><form id="type-form" hidden><label for="type-answer" class="sr-only">输入正确词语</label><input id="type-answer" maxlength="30" autocomplete="off" placeholder="在这里输入完整的正确词语"><button class="button primary" id="type-submit" type="submit">确认答案</button></form><div id="quiz-feedback" class="quiz-feedback" aria-live="polite" hidden></div><button id="next-question" class="button primary next-button" hidden>下一题 →</button><div class="quiz-bottom"><span id="quiz-score"></span><span>想一想，不用抢时间 ☀</span></div></div><div id="quiz-summary" hidden></div></dialog>
 <input id="import-file" type="file" accept=".json,application/json" hidden><div id="toast" role="status" class="toast" hidden></div>
+<script src="review.js" defer></script>
 <script src=worksheet.js defer></script>
 </body></html>
